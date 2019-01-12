@@ -1,0 +1,171 @@
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
+
+'''
+Tweak Brightness
+
+A simple slider for editing brightness on
+the official Raspberry Pi touchscreen.
+
+Author: Adam Davies
+Last modified: January 2019
+Website: www.abeontech.com
+'''
+
+import sys, termios, tty, os, time
+import tkinter as tk
+from tkinter import ttk
+
+
+class OtherFrame(tk.Toplevel):
+    """"""
+    def __init__(self):
+        """Constructor"""
+        tk.Toplevel.__init__(self)
+        self.geometry("250x250+45+45")
+        self.title("[ Info ]")
+
+        
+class MyApp(object):
+    """"""
+    def __init__(self, parent):
+        """Constructor"""
+        self.root = parent
+        self.root.title("TweakBrightness")
+        self.frame = tk.Frame(parent)
+        self.frame.pack()
+        self.createWidgets()
+        
+    def getBR(self):
+        try:
+            with open("/sys/class/backlight/rpi_backlight/brightness", "r") as self.br:
+                self.curBR = "\nBrightness is saved as: "
+                self.curBR += str(self.br.read())
+                return self.curBR
+
+        except FileNotFoundError:
+            self.curBR = "File Not Found!"
+            return self.curBR
+
+
+    def pressed(self):
+            valuex = self.slider.get()
+            valuex = os.popen('sudo bash -c "echo '+ str(valuex) +' > /sys/class/backlight/rpi_backlight/brightness"', 'r')
+            valuex3 = "Brightness is saved as: "
+            valuex3 += str(self.slider.get())
+            self.v.set(valuex3)
+            return valuex
+
+
+    def createWidgets(self):
+
+        tabControl = ttk.Notebook(self.root)
+
+        ## Tab 0 Control
+        tab0 = tk.Frame(tabControl)
+        tabControl.add(tab0, text='Info')
+        tabControl.pack(expand=1, fill="both")
+        
+        ## Tab 1 Control
+        tab1 = ttk.Frame(tabControl)
+        tabControl.add(tab1, text='Brightness')
+        tabControl.pack(expand=1, fill="both")
+
+
+
+### Info Tab ###
+        infoText = "A simple way to set brightness \nfor the official Raspberry Pi touchscreen.\r\rClick the Brightness tab, then use the slider.\r\r"
+        
+        infoText555 = tk.Label(tab0, height=6, text=infoText)
+        infoText555.grid(column=0, row=1, padx=8, pady=8, sticky='W')
+        
+        self.minchin = ttk.LabelFrame(tab0, text='[ Important! ]')
+        self.minchin.grid(column=0, row=2, padx=4, pady=4, sticky='WS')
+        
+        infoText111 = tk.Label(self.minchin, height=2, width=34, text="Press F2 reset to 100\rPress Escape to exit")
+        infoText111.grid(column=0, row=1, padx=4, pady=8, sticky='W')
+        
+
+### Brightness Tab ###
+        self.v = tk.StringVar()
+        self.v.set(self.getBR())
+
+        if self.v.get() != "File Not Found!":
+            introText2 = tk.Label(tab1, height=4, textvariable=self.v)
+            introText2.grid(column=0, row=1, padx=4, pady=8, sticky='WE')
+
+            self.monty = ttk.LabelFrame(tab1, text='[ Tweak Brightness ]')
+            self.monty.grid(column=0, row=2, padx=4, pady=4)
+
+
+            self.slider=tk.Scale(self.monty,orient=tk.HORIZONTAL,from_=20,to=100,length=280)
+            self.slider.set(60)
+            self.slidervar = self.slider.get()
+            self.slider.grid(column=0, row=0, sticky='WE', columnspan=3)
+
+
+            action = tk.Button(self.monty, text="Update", command=self.pressed)
+            action.grid(column=1, row=2, pady=4)
+
+            
+        else:
+            introText2 = tk.Label(tab1, height=5, text="\rBrightness file not found!\r\rPlease check the file below:\r/sys/class/backlight/rpi_backlight/brightness")
+            introText2.grid(column=0, row=1, padx=4, pady=8, sticky='WE')
+           
+
+    #----------------------------------------------------------------------
+    def hide(self):
+        """"""
+        self.root.withdraw()
+
+   #----------------------------------------------------------------------
+    def min(self):
+        """"""
+        self.root.iconify()
+
+    #----------------------------------------------------------------------
+    def openFrame(self):
+        """"""
+        # self.hide()
+        subFrame = OtherFrame()
+        handler = lambda: self.onCloseOtherFrame(subFrame)
+        btn = tk.Button(subFrame, text="Close", command=handler)
+        btn.pack()
+
+
+    #----------------------------------------------------------------------
+    def onCloseOtherFrame(self, otherFrame):
+        """"""
+        otherFrame.destroy()
+        self.show()
+
+
+    #----------------------------------------------------------------------
+    def show(self):
+        """"""
+        self.root.update()
+        self.root.deiconify()
+ 
+    def exit(self):
+        """"""
+        self.root.destroy()
+        self.root.quit()
+
+
+
+        
+#----------------------------------------------------------------------
+if __name__ == "__main__":
+    root = tk.Tk()
+    root.geometry("300x200+30+30")
+
+
+    # Set Taskbar icon
+    icon = tk.PhotoImage(data="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")
+    root.call('wm','iconphoto',root._w, icon)
+
+    hardExit = root.bind("<Escape>", lambda e: root.destroy())
+    hardReset = root.bind("<F2>", lambda e: os.popen('sudo bash -c "echo 100 > /sys/class/backlight/rpi_backlight/brightness"', 'r'))
+
+    app = MyApp(root)
+    root.mainloop()
